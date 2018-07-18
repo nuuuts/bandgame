@@ -14,7 +14,7 @@
 <body>
 <h1>The Band Game</h1>
 <div>
-		<button id="save-game">Save game</button> | <button id="load-game">Load game</button>
+		<button id="save-game">Save game</button> | <button id="load-game">Load game</button> | <button id="new-game">New game</button>
 </div>
 
 <h2>Current letter: <label id="current-letter"></label></h2>
@@ -113,12 +113,16 @@
 			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter']) {
 				let value = JSON.parse(localStorage.getItem('bandgame.' + variable));
 				if (value == null) {
-					alert('Loading failed from storage. Refresh page for new game.')
+					alert('Loading failed from storage. Please start a new game.');
 					break;
 				}
 				window[variable] = value;
 			}
 			init();
+		}
+
+		document.querySelector('#new-game').onclick = () => {
+			window.location.href = window.location.href;
 		}
 	</script>
 </html>
