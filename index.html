@@ -1,0 +1,101 @@
+<html>
+<head>
+	<title>The Band Game</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		body { font-family: 'Droid Serif Pro', 'Garamond', 'Georgia', 'Lucida Serif', serif; }
+		div.band-list-by-letter { display: inline-block; vertical-align: top; padding: 1em;}
+		div.band-list-by-letter:nth-of-type(odd) { background: #eee; }
+	</style>
+</head>
+<body>
+<h1>The Band Game</h1>
+<h2>Current letter or wildcard: <label id="current-letter"></label></h2>
+<input type="text" id="band-name" autocomplete="no"/><button id="le-butooon">&#x2386;</button>
+<hr/>
+<h2>Used bands (<label id='band-count'></label>)</h2>
+<div id="used-bands">
+</div>
+<template id="band-letter-block">
+	<div class="band-list-by-letter">
+		<h3></h3>
+		<ul></ul>
+	</div>
+</template>
+</body>
+	<script>
+		
+		var currentLetter = 'wildcard';
+		var bandsByLetter = {
+			'a': [ 'avantasia', 'amorphis' ],
+			'b': [ 'barathrum', 'belakor' ]
+		}
+		var bandChain = ['avantasia','amorphis','barathrum','belakor'];
+
+		function setCurrentLetter(letter) {
+			currentLetter = letter;
+			showCurrentLetter();
+		}
+		function showCurrentLetter() {
+			document.querySelector('#current-letter').innerText = currentLetter;
+		}
+		function init() {
+			refreshBands();
+			showCurrentLetter();
+		}
+		window.onload = init;
+
+		document.querySelector('#band-name').onkeyup = (keyEvent) => {
+			// console.log(keyEvent);
+			if (keyEvent.key == "Enter") {
+				var band = keyEvent.target.value.toLowerCase();
+				var bandIndex = bandChain.indexOf(band);
+				if (bandIndex >= 0) {
+					if (bandIndex == 0) {
+						alert(band + " was the first one played!");
+					} else {
+						alert(band + " was played already after " + bandChain[bandIndex - 1]);
+					}
+				} else {
+					addBand(band);
+					keyEvent.target.value = '';
+				}
+			}
+		}
+
+		function addBand(name) {
+			name = name.toLowerCase();
+			bandChain.push(name);
+			var first = name.slice(0,1);
+			var last = name.slice(-1);
+			if (first in bandsByLetter) {
+				bandsByLetter[first].push(name);
+			} else {
+				bandsByLetter[first] = [name];
+			}
+			setCurrentLetter(last);
+			refreshBands();
+		}
+
+		function refreshBands() { 
+			var template = document.querySelector('#band-letter-block');
+			var container = document.querySelector('#used-bands');
+			var freshContainer = container.cloneNode(false);
+			container.parentNode.replaceChild(freshContainer, container);
+			
+			document.querySelector('#band-count').innerText = bandChain.length;
+			
+			Object.keys(bandsByLetter).sort().forEach((letter) => {
+				console.log('showing bands of letter', letter)
+				var letterBlock = document.importNode(template.content, true);
+				letterBlock.querySelector('h3').innerText = letter.toUpperCase() + " (" + bandsByLetter[letter].length + ")";
+				bandsByLetter[letter].sort().forEach((band) => {
+					let li = document.createElement('li');
+					li.innerText = band;
+					letterBlock.querySelector('ul').appendChild(li);
+				});
+				freshContainer.appendChild(letterBlock);
+			});
+		}
+	</script>
+</html>
