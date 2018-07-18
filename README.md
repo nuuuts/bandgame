@@ -10,7 +10,7 @@
 			<li>Same as above, but starting with the last letter of the previous band</li>
 		</ol>
 		<b>Example chain:</b><br/>
-		Embreac<u>h</u> -> <u>H</u>elevor<u>n</u> -> <u>N</u>e Obliviscaris ... and so on.
+		Embreac<i>h</i> -> <b>H</b>elevor<i>n</i> -> <b>N</b>e Obliviscari<i>s</i> ... and so on.
 	</p>
 	<p>
 		That's it!
