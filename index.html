@@ -119,7 +119,7 @@
 			document.querySelector('#band-count').innerText = bandChain.length;
 			
 			Object.keys(bandsByLetter).sort().forEach((letter) => {
-				console.log('showing bands of letter', letter)
+				// console.log('showing bands of letter', letter)
 				var letterBlock = document.importNode(template.content, true);
 				letterBlock.querySelector('h3').innerText = letter.toUpperCase() + " (" + bandsByLetter[letter].length + ")";
 				bandsByLetter[letter].sort().forEach((band) => {
