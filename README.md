@@ -9,6 +9,8 @@
 			<li>Come up with a name of a band that you for sure know exists.</li>
 			<li>Same as above, but starting with the last letter of the previous band</li>
 		</ol>
+		<b>Example chain:</b><br/>
+		Embreac<u>h</u> -> <u>H</u>elevor<u>n</u> -> <u>N</u>e Obliviscaris ... and so on.
 	</p>
 	<p>
 		That's it!
