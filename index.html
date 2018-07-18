@@ -3,16 +3,16 @@
 	<title>The Band Game</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 	<style>
-		body { font-family: 'Droid Serif Pro', 'Garamond', 'Georgia', 'Lucida Serif', serif; }
+		body { font-family: 'Droid Serif Pro', 'Garamond', 'Georgia', 'Lucida Serif', serif; font-size: 62%; }
 		div.band-list-by-letter { display: inline-block; vertical-align: top; padding: 1em;}
 		div.band-list-by-letter:nth-of-type(odd) { background: #eee; }
-		input { width: 90%; }
+		input { width: 95%; }
 	</style>
 </head>
 <body>
 <h1>The Band Game</h1>
 <h2>Current letter or wildcard: <label id="current-letter"></label></h2>
-<input type="text" id="band-name" autocomplete="no"/><button id="le-butooon">&#x2386;</button>
+<input type="text" id="band-name" autocomplete="no"/>
 <hr/>
 <h2>Used bands (<label id='band-count'></label>)</h2>
 <div id="used-bands">
