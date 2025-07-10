@@ -29,6 +29,8 @@
 		button#help-button { display: block; position: absolute; top: 1em; right: 2em;}
 		div#save-load { margin-bottom: 1em; }
 		div#edit-players { display: inline; }
+		h2#used-bands-heading { margin-bottom: 0.25em; }
+		div#autosave { font-size: 75%; color: gray; margin-top: 0; }
 		div#help { display: none; position: absolute; top: 3em; left: 0em; ; padding: 1em; background: white; border: 1px solid black; }
 	</style>
 </head>
@@ -83,7 +85,8 @@
 		spellcheck={false}
 		/>
 </div>
-<h2>Used bands (<label id='band-count'></label>)</h2>
+<h2 id="used-bands-heading">Used bands (<label id='band-count'></label>)</h2>
+<div id="autosave"></div>
 <div id="used-bands">
 </div>
 <template id="band-letter-block">
@@ -202,6 +205,7 @@
 			setCurrentLetter(last);
 			setCurrentPlayer();
 			refreshBands();
+			saveGame();
 		}
 
 		function classForBand(bandName) {
@@ -234,18 +238,25 @@
 			setCurrentPlayer();
 		}
 
-		document.querySelector('#save-game').onclick = () => {
+		async function saveGame() {
 			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter', 'players']) {
 				localStorage.setItem('bandgame.' + variable, JSON.stringify(window[variable]));
 			}
-			alert('Game successfully saved to your local browser.')
-		};
+			document.querySelector('#autosave').innerText = `Saved ${(new Date()).toISOString()}`;
+		}
+		document.querySelector('#save-game').onclick = saveGame;
+
 		document.querySelector('#load-game').onclick = () => {
-			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter']) {
+			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter', 'players']) {
 				let value = JSON.parse(localStorage.getItem('bandgame.' + variable));
 				if (value == null) {
-					alert('Loading failed from storage. Please start a new game.');
-					break;
+					if (variable == "players") {
+						alert('New feature: set your player names at the top! Setting default for now.');
+						value = ['player1', 'player2'];
+					} else {
+						alert('Loading failed from storage. Please start a new game.');
+						break;
+					}
 				}
 				window[variable] = value;
 			}
