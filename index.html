@@ -65,7 +65,11 @@
 	</p>
 </div>
 <div id="save-load">
-		<button id="save-game">Save game</button> | <button id="load-game">Load game</button> | <button id="new-game">New game</button>
+		<button id="save-game">Save game</button> | 
+		<button id="load-game">Load game</button> | 
+		<button id="new-game">New game</button> | 
+		<button id="share-game">Share game</button>
+
 </div>
 <div id="player-controls">
 	<label>Players (<label id="playercount"></label>)
@@ -150,13 +154,120 @@
 				}
 			}
 		}
+
+		// H4sIAAAAAAAACh3MQQqAIBRF0b3c8V9BWwkHTxNUSiINiWjvUeMD5yYk5co0I%2B%2BFIR8wwhIx4rafHaNr0W%2B5KKk2jCZ1VeGMfdUVj%2FYdaWCUgXteg%2FpB9VkAAAA%3D
+		// H4sIAAAAAAAACqtWSs5IzMxTsopWKs7PyVfSUSrOV0jPz09RitVRKshJrEwtKlayio6tBQAapxA7KQAAAA%3D%3D
+
+		async function shareGame() {
+			const state = {
+				chain: bandChain,
+				players: players,
+			}
+			const json = JSON.stringify(state);
+			console.log('JSON state: ', json.length, 'bytes')
+			const buffer = await compress(json);
+			console.log('Buffer size after compression: ', buffer.length);
+			const b64 = btoa(String.fromCharCode(...buffer));
+			console.log('b64 size: ', b64.length);
+			const payload = encodeURIComponent(b64);
+			console.log('Payload', payload);
+			window.location.hash = payload;
+			await navigator.clipboard.writeText(window.location.href);
+			alert('Link copied to clipboard!');
+		}
+
+		async function compress(str) {
+			const stream = new Blob([str]).stream();
+			const compressedStream = stream.pipeThrough(
+				new CompressionStream('gzip')
+			);
+			const chunks = [];
+			for await (const chunk of compressedStream) {
+				chunks.push(chunk);
+			}
+			const blob = new Blob(chunks);
+			const buffer = await blob.arrayBuffer();
+			return new Uint8Array(buffer);
+		}
+
+		async function decompress(compressedBytes) {
+			const stream = new Blob([compressedBytes]).stream();
+			const decompressedStream = stream.pipeThrough(
+				new DecompressionStream("gzip")
+			);
+			const chunks = [];
+			for await (const chunk of decompressedStream) {
+				chunks.push(chunk);
+			}
+			const blob = new Blob(chunks);
+			const buffer = await blob.arrayBuffer();
+			return new Uint8Array(buffer);
+		}
+
+		async function readSharedState() {
+			console.log('readSharedState')
+			const b64 = decodeURIComponent(location.hash.slice(1));
+			const bin = atob(b64);
+			// console.log(bin);
+			const compressedBytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+			const payload = await decompress(compressedBytes);
+			const json = new TextDecoder().decode(payload);
+			const shared_state = JSON.parse(json)
+			console.log('Shared state read: ', json);
+			shared_chain = shared_state['chain'];
+			players = shared_state['players'];
+			console.log('Total of ', shared_chain.length, 'bands in chain');
+			for (let band of shared_chain) {
+				console.log('addBand', band, 'no autosave!')
+				addBand(band, false);
+			}
+			saveGame();
+			history.replaceState(null, '', location.pathname);
+
+
+		}
+
+		async function loadOrInitGame() {
+			const canCompress = ('CompressionStream' in window) && ('DecompressionStream' in window);
+			if (!canCompress) { 
+				console.warn('no CompressionStream capability')
+				document.querySelector('#share-game').disabled = true;
+			} else {
+				console.log('CompressionStream capable!')
+				document.querySelector('#share-game').onclick = shareGame;
+				if (window.location.hash) {
+					console.log('Share detected')
+					if (confirm('Detected shared state in URL. Do you want to overwrite current state with it?')) {
+						console.log('Reading state');
+						await readSharedState();
+					}
+				} else {
+						console.log('No shared state')
+						let savedGame = localStorage.getItem('bandgame');
+						if (savedGame) {
+							console.log('Save game detected', savedGame);
+							// alert(`Loading saved game from ${savedGame}`);
+							loadGame();
+							console.log('Load game finished..');
+							document.querySelector('#autosave').innerText = `Save game loaded: ${savedGame}`;
+							return;
+						} else {
+							console.log('No save game detected');
+						}
+					}
+				}
+			init();
+		}
+
 		function init() {
+			console.log('init')
 			refreshBands();
 			showCurrentLetter();
 			showCurrentPlayer();
 			setPlayers();
 		}
-		window.onload = init;
+
+		window.onload = loadOrInitGame;
 
 		document.querySelector('#band-game-search').onkeyup = (keyEvent) => {
 			// console.log(keyEvent);
@@ -192,7 +303,7 @@
 			}
 		}
 
-		function addBand(name) {
+		function addBand(name, autosave=true) {
 			name = name.toLowerCase();
 			bandChain.push(name);
 			var first = name.slice(0,1);
@@ -205,7 +316,9 @@
 			setCurrentLetter(last);
 			setCurrentPlayer();
 			refreshBands();
-			saveGame();
+			if (autosave) {
+				saveGame();
+			}
 		}
 
 		function classForBand(bandName) {
@@ -242,11 +355,13 @@
 			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter', 'players']) {
 				localStorage.setItem('bandgame.' + variable, JSON.stringify(window[variable]));
 			}
+			localStorage.setItem('bandgame', (new Date()).toISOString());
+
 			document.querySelector('#autosave').innerText = `Saved ${(new Date()).toISOString()}`;
 		}
 		document.querySelector('#save-game').onclick = saveGame;
 
-		document.querySelector('#load-game').onclick = () => {
+		function loadGame() { 
 			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter', 'players']) {
 				let value = JSON.parse(localStorage.getItem('bandgame.' + variable));
 				if (value == null) {
@@ -261,9 +376,19 @@
 				window[variable] = value;
 			}
 			init();
+			let savedGame = localStorage.getItem('bandgame');
+			if (savedGame) {
+				document.querySelector('#autosave').innerText = `Save game loaded: ${savedGame}`;
+			}
 		}
-
+		document.querySelector('#load-game').onclick = loadGame;
+		
 		document.querySelector('#new-game').onclick = () => {
+			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter', 'players']) {
+				localStorage.removeItem(`bandgame.${variable}`);
+			}
+			localStorage.removeItem(`bandgame`);
+
 			window.location.href = window.location.href;
 		}
 
