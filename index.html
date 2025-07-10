@@ -24,9 +24,11 @@
 		.player_bg7 { background-color: #e377c2; }
 		.player_bg8 { background-color: #7f7f7f; }
 
-		input#band-game-search { width: 95%; margin: 1em 0.5em; padding: 0.25em; }
+		input#band-game-search { width: 95%; font-size: 200%; margin: 0.5em 0.5em; padding: 0.25em; }
 		label#current-letter { font-style: italic; color: black;}
 		button#help-button { display: block; position: absolute; top: 1em; right: 2em;}
+		div#save-load { margin-bottom: 1em; }
+		div#edit-players { display: inline; }
 		div#help { display: none; position: absolute; top: 3em; left: 0em; ; padding: 1em; background: white; border: 1px solid black; }
 	</style>
 </head>
@@ -63,9 +65,9 @@
 <div id="save-load">
 		<button id="save-game">Save game</button> | <button id="load-game">Load game</button> | <button id="new-game">New game</button>
 </div>
-<div id="players">
-	<label for="playercount">Players</label>
-	<input type="number" inputmode="numeric" size="2" width="2" id="playercount" min="1" max="8" pattern="\d+" />
+<div id="player-controls">
+	<label>Players (<label id="playercount"></label>)
+	<input type="text" id="players" />
 </div>
 <div id="history">
 	<ol></ol>
@@ -73,7 +75,7 @@
 <h2><label id="current-player">Player </label>: <label id="current-letter"></label></h2>
 <div id="game-input-search">
 	<input 
-		type="text" 
+		type="search" 
 		id="band-game-search"
 		autocomplete="no"
 		autocorrect="off"
@@ -94,10 +96,10 @@
 	<script>
 		
 		var currentLetter = 'free choice';
-		var currentPlayer = 1;
+		var currentPlayer = 0;
 		var bandsByLetter = {};
 		var bandChain = [];
-		var playerCount = 3;
+		var players = [];
 
 		function setCurrentLetter(letter) {
 			currentLetter = letter;
@@ -107,14 +109,23 @@
 			document.querySelector('#current-letter').innerText = currentLetter;
 		}
 
+		function setPlayers() {
+			document.querySelector('#playercount').innerText = players.length;
+			document.querySelector('#players').value = players.join(' ');
+		}
+
 		function setCurrentPlayer() {
-			currentPlayer = (bandChain.length % playerCount) + 1;
+			currentPlayer = (bandChain.length % players.length);
 			showCurrentPlayer();
 		}
 		function showCurrentPlayer() {
 			let player = document.querySelector('#current-player');
-			player.innerText = `Player ${currentPlayer}`;
-			player.className = `player${currentPlayer}`;
+			if (players.length > 0) {
+				player.innerText = players[currentPlayer];
+			} else {
+				player.innerText = 'solo game'
+			}
+			player.className = `player${currentPlayer+1}`;
 			
 		}
 
@@ -140,8 +151,7 @@
 			refreshBands();
 			showCurrentLetter();
 			showCurrentPlayer();
-			const playerCountSelector = document.querySelector('#playercount');
-			playerCountSelector.value = playerCount;
+			setPlayers();
 		}
 		window.onload = init;
 
@@ -163,6 +173,22 @@
 			}
 		}
 
+		document.querySelector('#players').onkeyup = (keyEvent) => {
+			// console.log(keyEvent);
+			if (keyEvent.key == "Enter") {
+				console.log(`Full player input: <<${keyEvent.target.value.trim()}>>`);
+				let newPlayers = keyEvent.target.value.trim().split(' ');
+				console.log("newPlayers", newPlayers);
+				let oldCount = players.length;
+				players = newPlayers;
+				setPlayers();
+				setCurrentPlayer();
+				if (newPlayers.length != oldCount) {
+					refreshBands();
+				}
+			}
+		}
+
 		function addBand(name) {
 			name = name.toLowerCase();
 			bandChain.push(name);
@@ -180,7 +206,7 @@
 
 		function classForBand(bandName) {
 			let bandIndex = bandChain.indexOf(bandName);
-			let nthPlayer = ((bandIndex + 1) % playerCount) + 1;
+			let nthPlayer = (bandIndex % players.length) + 1;
 			return `player${nthPlayer}`;
 
 		}
@@ -209,7 +235,7 @@
 		}
 
 		document.querySelector('#save-game').onclick = () => {
-			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter']) {
+			for (let variable of ['bandChain', 'bandsByLetter', 'currentLetter', 'players']) {
 				localStorage.setItem('bandgame.' + variable, JSON.stringify(window[variable]));
 			}
 			alert('Game successfully saved to your local browser.')
