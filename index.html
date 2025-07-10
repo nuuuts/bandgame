@@ -69,7 +69,7 @@
 		<button id="save-game">Save game</button>
 		<button id="load-game">Load game</button> | 
 		<button id="new-game">New game</button> | 
-		<button id="share-game">Share game</button>
+		<button id="share-game" disabled="disabled">Sharing not supported</button>
 
 </div>
 <div id="player-controls">
@@ -230,12 +230,12 @@
 
 		async function loadOrInitGame() {
 			const canCompress = ('CompressionStream' in window) && ('DecompressionStream' in window);
-			if (!canCompress) { 
-				console.warn('no CompressionStream capability')
-				document.querySelector('#share-game').disabled = true;
-			} else {
+			if (canCompress) { 
 				console.log('CompressionStream capable!')
-				document.querySelector('#share-game').onclick = shareGame;
+				let share_button = document.querySelector('#share-game');
+				share_button.onclick = shareGame;
+				share_button.disabled = false;
+				share_button.innerText = 'Share game!'
 				if (window.location.hash) {
 					console.log('Share detected')
 					if (confirm('Detected shared state in URL. Do you want to overwrite current state with it?')) {
@@ -268,7 +268,6 @@
 			setPlayers();
 		}
 
-		window.onload = loadOrInitGame;
 
 		document.querySelector('#band-game-search').onkeyup = (keyEvent) => {
 			// console.log(keyEvent);
@@ -403,5 +402,7 @@
 			}
 		}
 		
+		window.onload = loadOrInitGame;
+
 	</script>
 </html>
