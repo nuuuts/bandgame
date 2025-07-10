@@ -3,12 +3,29 @@
 	<title>The Band Game</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 	<style>
-		body { font-family: 'Droid Serif Pro', 'Garamond', 'Georgia', 'Lucida Serif', serif; font-size: 62%; }
+		body { font-family: 'Droid Serif Pro', 'Garamond', 'Georgia', 'Lucida Serif', serif; font-size: 125%; }
 		div.band-list-by-letter { display: inline-block; vertical-align: top; padding: 0.5em; min-width: 7em; }
-		div.band-list-by-letter:nth-of-type(odd) { /* maybe something */ }
+		/* div.band-list-by-letter:nth-of-type(odd) { maybe something } */
 		div.band-list-by-letter ul { padding-left: 1em; }
-		input { width: 95%; margin: 1em 0.5em; padding: 0.25em; }
-		label#current-letter { font-style: italic; color: green;}
+		.player1 { color: #1f77b4; }
+		.player2 { color: #ff7f0e; }
+		.player3 { color: #2ca02c; }
+		.player4 { color: #d62728; }
+		.player5 { color: #9467bd; }
+		.player6 { color: #8c564b; }
+		.player7 { color: #e377c2; }
+		.player8 { color: #7f7f7f; }
+		.player_bg1 { background-color: #1f77b4; }
+		.player_bg2 { background-color: #ff7f0e; }
+		.player_bg3 { background-color: #2ca02c; }
+		.player_bg4 { background-color: #d62728; }
+		.player_bg5 { background-color: #9467bd; }
+		.player_bg6 { background-color: #8c564b; }
+		.player_bg7 { background-color: #e377c2; }
+		.player_bg8 { background-color: #7f7f7f; }
+
+		input#band-game-search { width: 95%; margin: 1em 0.5em; padding: 0.25em; }
+		label#current-letter { font-style: italic; color: black;}
 		button#help-button { display: block; position: absolute; top: 1em; right: 2em;}
 		div#help { display: none; position: absolute; top: 3em; left: 0em; ; padding: 1em; background: white; border: 1px solid black; }
 	</style>
@@ -43,13 +60,26 @@
 		</ul>
 	</p>
 </div>
-<div>
+<div id="save-load">
 		<button id="save-game">Save game</button> | <button id="load-game">Load game</button> | <button id="new-game">New game</button>
 </div>
-
-<h2>Current letter: <label id="current-letter"></label></h2>
-<div>
-	<input type="text" id="band-name" autocomplete="no"/>
+<div id="players">
+	<label for="playercount">Players</label>
+	<input type="number" inputmode="numeric" size="2" width="2" id="playercount" min="1" max="8" pattern="\d+" />
+</div>
+<div id="history">
+	<ol></ol>
+</div>
+<h2><label id="current-player">Player </label>: <label id="current-letter"></label></h2>
+<div id="game-input-search">
+	<input 
+		type="text" 
+		id="band-game-search"
+		autocomplete="no"
+		autocorrect="off"
+		autocapitalize="off"
+		spellcheck={false}
+		/>
 </div>
 <h2>Used bands (<label id='band-count'></label>)</h2>
 <div id="used-bands">
@@ -64,8 +94,10 @@
 	<script>
 		
 		var currentLetter = 'free choice';
+		var currentPlayer = 1;
 		var bandsByLetter = {};
 		var bandChain = [];
+		var playerCount = 3;
 
 		function setCurrentLetter(letter) {
 			currentLetter = letter;
@@ -74,13 +106,46 @@
 		function showCurrentLetter() {
 			document.querySelector('#current-letter').innerText = currentLetter;
 		}
+
+		function setCurrentPlayer() {
+			currentPlayer = (bandChain.length % playerCount) + 1;
+			showCurrentPlayer();
+		}
+		function showCurrentPlayer() {
+			let player = document.querySelector('#current-player');
+			player.innerText = `Player ${currentPlayer}`;
+			player.className = `player${currentPlayer}`;
+			
+		}
+
+		function showBandHistory() {
+			let histContainer = document.querySelector('#history ol');
+			let totalBands = bandChain.length;
+			let latestBands = []
+			if (totalBands > 0) {
+				let bandsToShow = Math.min(totalBands, 3)
+				let startCount = totalBands - bandsToShow;
+				histContainer.setAttribute('start', startCount + 1);
+				latestBands = bandChain.slice(startCount);
+				histContainer.innerHTML = '';
+				for (let band of latestBands) {
+					let li = document.createElement('li');
+					li.innerText = band;
+					li.className = classForBand(band);
+					histContainer.appendChild(li);
+				}
+			}
+		}
 		function init() {
 			refreshBands();
 			showCurrentLetter();
+			showCurrentPlayer();
+			const playerCountSelector = document.querySelector('#playercount');
+			playerCountSelector.value = playerCount;
 		}
 		window.onload = init;
 
-		document.querySelector('#band-name').onkeyup = (keyEvent) => {
+		document.querySelector('#band-game-search').onkeyup = (keyEvent) => {
 			// console.log(keyEvent);
 			if (keyEvent.key == "Enter") {
 				var band = keyEvent.target.value.toLowerCase();
@@ -109,9 +174,16 @@
 				bandsByLetter[first] = [name];
 			}
 			setCurrentLetter(last);
+			setCurrentPlayer();
 			refreshBands();
 		}
 
+		function classForBand(bandName) {
+			let bandIndex = bandChain.indexOf(bandName);
+			let nthPlayer = ((bandIndex + 1) % playerCount) + 1;
+			return `player${nthPlayer}`;
+
+		}
 		function refreshBands() { 
 			var template = document.querySelector('#band-letter-block');
 			var container = document.querySelector('#used-bands');
@@ -126,11 +198,14 @@
 				letterBlock.querySelector('h3').innerText = letter.toUpperCase() + " (" + bandsByLetter[letter].length + ")";
 				bandsByLetter[letter].sort().forEach((band) => {
 					let li = document.createElement('li');
+					li.className = classForBand(band);
 					li.innerText = band;
 					letterBlock.querySelector('ul').appendChild(li);
 				});
 				freshContainer.appendChild(letterBlock);
 			});
+			showBandHistory();
+			setCurrentPlayer();
 		}
 
 		document.querySelector('#save-game').onclick = () => {
